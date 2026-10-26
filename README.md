@@ -92,7 +92,6 @@ Building reliable pipelines for geospatial data requires navigating a minefield 
 
 <br><br><br>
 
-Any Qs: jlambourne94@gmail.com
-<br><br><a href='https://www.linkedin.com/in/jack-lambourne-3b8aba81/'>https://www.linkedin.com/in/jack-lambourne-3b8aba81/</a>
+Any Qs: <a href='https://www.linkedin.com/in/jack-lambourne-3b8aba81/'>https://www.linkedin.com/in/jack-lambourne-3b8aba81/</a>
 
 
