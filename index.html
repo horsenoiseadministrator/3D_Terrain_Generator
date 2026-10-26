@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Terrain Generator</title>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Draw CSS & JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a1a1a; color: white; font-family: sans-serif; display: flex; height: 100vh; }
+        #map-container { width: 40%; height: 100%; position: relative; border-right: 2px solid #333; }
+        #map { width: 100%; height: 100%; }
+        #viewer-container { width: 60%; height: 100%; position: relative; }
+        canvas { display: block; }
+        
+        #ui { 
+            position: absolute; top: 20px; left: 20px; z-index: 1000; 
+            padding: 15px; background: rgba(0,0,0,0.85); border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); max-width: 300px;
+        }
+        button { 
+            background: #2ea44f; color: white; border: none; padding: 10px 15px; 
+            border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; 
+        }
+        button:disabled { background: #444; cursor: not-allowed; }
+        button:hover:not(:disabled) { background: #2c974b; }
+        p { font-size: 13px; line-height: 1.4; color: #ccc; margin: 8px 0 0 0; }
+/* Add to your <style> block */
+        #api-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .modal-content {
+            background: #222; padding: 30px; border-radius: 8px; text-align: center;
+            border: 1px solid #444; width: 350px;
+        }
+        .modal-content input {
+            width: 90%; padding: 10px; margin: 15px 0; border-radius: 4px; 
+            border: 1px solid #555; background: #111; color: white;
+        }
+    </style>
+</head>
+<body>
+<!-- API Key Modal -->
+    <div id="api-modal">
+        <div class="modal-content">
+            <h2 style="margin-top: 0;">Welcome</h2>
+            <p>Please enter your free OpenTopography API key to generate 3D terrain.</p>
+            <input type="text" id="apiKeyInput" placeholder="Enter API Key here..." />
+            <button id="saveKeyBtn">Start Mapping</button>
+        </div>
+    </div>
+    <!-- Left Panel: 2D Map for Drawing Bounding Box -->
+    <div id="map-container">
+        <div id="ui">
+            <h3 style="margin:0 0 5px 0;">1. Select Area</h3>
+            <p id="status">Use the rectangle tool on the map to draw your region of interest.</p>
+            <button id="generateBtn" disabled>Generate 3D Map</button>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- Right Panel: Three.js 3D Terrain Viewport -->
+    <div id="viewer-container"></div>
+
+    <script type="module">
+
+// --- 0. API KEY MODAL LOGIC ---
+        let userApiKey = localStorage.getItem('openTopoKey') || "";
+        const modal = document.getElementById('api-modal');
+        const keyInput = document.getElementById('apiKeyInput');
+        
+        if (userApiKey) {
+            keyInput.value = userApiKey;
+        }
+
+        document.getElementById('saveKeyBtn').addEventListener('click', () => {
+            const val = keyInput.value.trim();
+            if (val) {
+                userApiKey = val;
+                localStorage.setItem('openTopoKey', userApiKey); // Save to browser storage
+                modal.style.display = 'none';
+            } else {
+                alert("Please enter a valid API key.");
+            }
+        });
+        
+        // (Keep all your Leaflet and Three.js setup code here...)        
+
+import * as THREE from 'https://esm.sh/three@0.150.1';
+        import { GLTFLoader } from 'https://esm.sh/three@0.150.1/examples/jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'https://esm.sh/three@0.150.1/examples/jsm/controls/OrbitControls.js';
+
+        // --- 1. LEAFLET 2D MAP SETUP ---
+        const map = L.map('map').setView([56.62, -5.0], 11); // Default to Scottish Highlands
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // FIX: Force Leaflet to recalculate its container size once rendered
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 250);
+
+        // Feature group to hold the drawn rectangle
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const drawControl = new L.Control.Draw({
+            draw: {
+                polygon: false,
+                polyline: false,
+                circle: false,
+                marker: false,
+                circlemarker: false,
+                rectangle: {
+                    shapeOptions: { color: '#2ea44f', weight: 3 }
+                }
+            },
+            edit: {
+                featureGroup: drawnItems,
+                edit: true
+            }
+        });
+        map.addControl(drawControl);
+
+        let selectedBounds = null;
+
+        map.on(L.Draw.Event.CREATED, function (e) {
+            drawnItems.clearLayers(); // Only allow one selection box at a time
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+            
+            selectedBounds = layer.getBounds();
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('status').innerText = "Box selected! Click Generate to render 3D terrain.";
+        });
+
+        map.on(L.Draw.Event.EDITED, function (e) {
+            const layers = e.layers;
+            layers.eachLayer(function (layer) {
+                selectedBounds = layer.getBounds();
+            });
+        });
+
+        // --- 2. THREE.JS 3D VIEWER SETUP ---
+        const container = document.getElementById('viewer-container');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
+        camera.position.set(0, 800, 1200);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight.position.set(500, 1000, 500);
+        scene.add(directionalLight);
+        scene.add(new THREE.AmbientLight(0x404040, 2.0));
+
+        let currentModel = null;
+
+        // --- 3. TRIGGER BACKEND GENERATION ---
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            if (!selectedBounds) return;
+
+            document.getElementById('status').innerText = "Fetching NASA DEM & crunching mesh on server...";
+            document.getElementById('generateBtn').disabled = true;
+
+            const bboxData = {
+                min_lon: selectedBounds.getWest(),
+                min_lat: selectedBounds.getSouth(),
+                max_lon: selectedBounds.getEast(),
+                max_lat: selectedBounds.getNorth(),
+                z_exaggeration: 2.5,
+                api_key: userApiKey // <-- Send the user's key to the backend
+            };
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bboxData)
+                });
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    document.getElementById('status').innerText = "Loading GLB into WebGL viewer...";
+                    
+                    const loader = new GLTFLoader();
+                    loader.load(data.glb_url, (gltf) => {
+                        if (currentModel) scene.remove(currentModel);
+                        
+                        currentModel = gltf.scene;
+                        currentModel.traverse((node) => {
+                            if (node.isMesh) node.material.side = THREE.DoubleSide;
+                        });
+
+                        const box = new THREE.Box3().setFromObject(currentModel);
+                        const center = box.getCenter(new THREE.Vector3());
+                        currentModel.position.sub(center);
+                        
+                        scene.add(currentModel);
+                        document.getElementById('status').innerText = "Done! Drag on map to update, or orbit 3D view.";
+                        document.getElementById('generateBtn').disabled = false;
+                    });
+                } else {
+                    throw new Error(data.detail || "Unknown error");
+                }
+            } catch (err) {
+                document.getElementById('status').innerText = "Error: " + err.message;
+                document.getElementById('generateBtn').disabled = false;
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+</body>
+</html>
