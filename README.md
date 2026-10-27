@@ -48,6 +48,9 @@ Esri provide the satellite imagery:
 <img width="958" height="539" alt="Screenshot 2026-10-25 215740" src="https://github.com/user-attachments/assets/9a2fa369-c1f6-47c9-883c-34462a1d7d6a" />
 <br><br>
 And Wikimedia Commons provide the photography:
+<br><br>
+<img width="1825" height="981" alt="image" src="https://github.com/user-attachments/assets/dc05c9d2-56c3-4207-a5cd-333717e0d0fb" />
+
 <br>
 <img width="916" height="491" alt="image" src="https://github.com/user-attachments/assets/47c4c815-fbf0-4646-ae62-b09c4d84099a" />
 <br>
