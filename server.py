@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import math
+import glob
+
 
 app = FastAPI(title="Terrain 3D API")
 
@@ -27,6 +29,8 @@ class BoundingBox(BaseModel):
 
 def process_terrain_pipeline(bbox: BoundingBox) -> str:
     """CPU-bound and Blocking I/O function to be run in a thread"""
+    for f in glob.glob("static/*"):   # wipe leftovers from earlier requests
+        os.remove(f)
     job_id = str(uuid.uuid4())
     tif_path = f"static/{job_id}.tif"
     tex_path = f"static/{job_id}_tex.png"
@@ -119,7 +123,12 @@ def process_terrain_pipeline(bbox: BoundingBox) -> str:
     mesh = grid.extract_surface(algorithm='dataset_surface')
     
     # Tag the safe UVs for the GLTF Exporter
+        # Tag the safe UVs for the GLTF Exporter
     mesh.point_data["TEXCOORD_0"] = mesh.active_texture_coordinates
+
+    # NEW: convert VTK axes (X=east, Y=north, Z=up) -> glTF/Three.js axes (X=east, Y=up, Z=south)
+    pts = mesh.points.copy()
+    mesh.points = np.column_stack((pts[:, 0], pts[:, 2], -pts[:, 1]))
     
     
     # ================= DEBUG OUTPUT =================
@@ -158,27 +167,47 @@ def process_terrain_pipeline(bbox: BoundingBox) -> str:
         show_scalar_bar=False, 
         lighting=False
     )
-    plotter.export_gltf(glb_path)
+    plotter.export_gltf(glb_path, rotate_scene=False)
     
     # Clean up
     os.remove(tif_path)
     os.remove(tex_path)
     
-    return f"/static/{job_id}.glb"
+    # NEW: Return the exact TIF bounds
+    return {
+        "glb_url": f"/static/{job_id}.glb",
+        "true_bounds": {
+            "west": dem_bounds.left,
+            "south": dem_bounds.bottom,
+            "east": dem_bounds.right,
+            "north": dem_bounds.top
+        }
+    }
     
+from fastapi.responses import FileResponse
+
+@app.get("/favicon.png")
+def get_favicon():
+    return FileResponse("favicon.png")
 
 @app.post("/generate")
 async def generate_terrain(bbox: BoundingBox):
     try:
         # Offload the crunching to a worker thread
-        glb_url = await asyncio.to_thread(process_terrain_pipeline, bbox)
-        return {"status": "success", "glb_url": glb_url}
+        result = await asyncio.to_thread(process_terrain_pipeline, bbox)
+        
+        # Merge the success status with the dictionary returned by the pipeline
+        return {"status": "success", **result}
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+    
 
 @app.get("/")
 def serve_frontend():
     return FileResponse("index.html")
+
 
 
 
