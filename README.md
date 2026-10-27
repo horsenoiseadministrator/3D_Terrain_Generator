@@ -59,6 +59,14 @@ And (new!) Wikimedia Commons provide photography:
 <img width="919" height="490" alt="image" src="https://github.com/user-attachments/assets/95cf0277-6bea-4864-8bf5-9dd9889d56e5" />
 
 <br>
+
+<br>,br>
+
+
+More fun examples:
+<br><br>
+<img width="905" height="487" alt="image" src="https://github.com/user-attachments/assets/c6bfbaed-501c-40c2-864d-279d88673cb9" />
+
 <img width="944" height="535" alt="Screenshot 2026-10-25 222204" src="https://github.com/user-attachments/assets/23611fa5-edb2-4513-b7a0-e733dd564f80" />
 <br>
 <img width="926" height="529" alt="Screenshot 2026-10-26 083259" src="https://github.com/user-attachments/assets/06c02331-7ebc-4687-9155-d6fe8b8c62d3" />
