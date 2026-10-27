@@ -43,9 +43,20 @@ NASA provide the elevation data:
 
 <br><br>
 
-Esri the satellite imagery (to make it beautiful!):
+Esri provide the satellite imagery:
 <br><br>
 <img width="958" height="539" alt="Screenshot 2026-10-25 215740" src="https://github.com/user-attachments/assets/9a2fa369-c1f6-47c9-883c-34462a1d7d6a" />
+<br><br>
+And Wikimedia Commons provide the photography:
+<br>
+<img width="916" height="491" alt="image" src="https://github.com/user-attachments/assets/47c4c815-fbf0-4646-ae62-b09c4d84099a" />
+<br>
+<img width="922" height="491" alt="image" src="https://github.com/user-attachments/assets/3e325116-928a-426f-a59e-6760252cc3fc" />
+
+<br>
+<br>
+<img width="1825" height="981" alt="image" src="https://github.com/user-attachments/assets/dc05c9d2-56c3-4207-a5cd-333717e0d0fb" />
+
 <br>
 <img width="944" height="535" alt="Screenshot 2026-10-25 222204" src="https://github.com/user-attachments/assets/23611fa5-edb2-4513-b7a0-e733dd564f80" />
 <br>
