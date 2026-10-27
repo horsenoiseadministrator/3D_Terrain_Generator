@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>3D Terrain Generator</title>
-    <!-- Leaflet CSS & JS -->
+
+<link rel="icon" type="image/png" href="/favicon.png">
+
+<!-- OR, if you want it to work correctly on all browsers (including older ones) -->
+<link rel="shortcut icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Leaflet Draw CSS & JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
@@ -16,20 +19,20 @@
         #map { width: 100%; height: 100%; }
         #viewer-container { width: 60%; height: 100%; position: relative; }
         canvas { display: block; }
-        
-        #ui { 
-            position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            padding: 15px; background: rgba(0,0,0,0.85); border-radius: 8px; 
+
+        #ui {
+            position: absolute; top: 20px; left: 20px; z-index: 1000;
+            padding: 15px; background: rgba(0,0,0,0.85); border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); max-width: 300px;
         }
-        button { 
-            background: #2ea44f; color: white; border: none; padding: 10px 15px; 
-            border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; 
+        button {
+            background: #2ea44f; color: white; border: none; padding: 10px 15px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px;
         }
         button:disabled { background: #444; cursor: not-allowed; }
         button:hover:not(:disabled) { background: #2c974b; }
         p { font-size: 13px; line-height: 1.4; color: #ccc; margin: 8px 0 0 0; }
-/* Add to your <style> block */
+
         #api-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); display: flex;
@@ -40,13 +43,68 @@
             border: 1px solid #444; width: 350px;
         }
         .modal-content input {
-            width: 90%; padding: 10px; margin: 15px 0; border-radius: 4px; 
+            width: 90%; padding: 10px; margin: 15px 0; border-radius: 4px;
             border: 1px solid #555; background: #111; color: white;
         }
+
+        /* Wikimedia overlay */
+        #wiki-overlay {
+            position: absolute; top: 180px; bottom: 20px; left: 20px; right: 20px;
+            z-index: 1000; background: rgba(0,0,0,0.85); border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5); display: none;
+            flex-direction: column; border: 1px solid #444;
+        }
+        #wiki-overlay.collapsed { bottom: auto; }
+        #wiki-overlay.collapsed #wiki-content,
+        #wiki-overlay.collapsed #wiki-pagination { display: none; }
+        #wiki-overlay.collapsed #wiki-header { border-radius: 8px; }
+        #wiki-header {
+            padding: 10px 15px; background: #333; border-radius: 8px 8px 0 0;
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+        }
+        #wiki-content { overflow-y: auto; padding: 10px; flex: 1; }
+        .wiki-item {
+            display: flex; gap: 15px; margin-bottom: 12px; padding: 12px;
+            background: #222; border-radius: 4px; align-items: flex-start;
+        }
+        .wiki-item img { width: 120px; height: 120px; object-fit: cover; border-radius: 4px; }
+        .wiki-item-info { flex: 1; display: flex; flex-direction: column; align-self: stretch; }
+        .wiki-item-info strong { font-size: 14px; margin-bottom: 10px; word-break: break-word; }
+        .wiki-btn-group { display: flex; gap: 10px; margin-top: auto; }
+        .wiki-btn {
+            background: #444; border: none; color: white; padding: 8px 12px; margin: 0; width: auto;
+            border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; flex: 1;
+        }
+        .wiki-btn.fly { background: #2ea44f; }
+        .wiki-btn.fly:hover { background: #2c974b; }
+        .wiki-btn.max:hover { background: #555; }
+        #wiki-pagination {
+            display: flex; justify-content: space-between; padding: 10px;
+            background: #222; border-radius: 0 0 8px 8px;
+        }
+        .page-btn { width: 48%; padding: 8px; margin: 0; background: #555; }
+        .wiki-item.active { outline: 2px solid #ffeb3b; }
+
+        /* Full-screen image viewer (constrained to map container) */
+        #image-viewer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box; text-align: center;
+        }
+        #image-viewer img {
+            width: 100%; height: 80%; object-fit: contain; /* scales up or down to fit the container */
+        }
+        #image-viewer h3 { color: white; margin: 15px 0 0 0; font-size: 16px; }
+        #close-viewer-btn {
+            position: absolute; top: 20px; right: 20px; background: #d73a49; border: none;
+            color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; padding: 0; margin: 0;
+            font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center;
+        }
+        #close-viewer-btn:hover { background: #cb2431; }
     </style>
 </head>
 <body>
-<!-- API Key Modal -->
     <div id="api-modal">
         <div class="modal-content">
             <h2 style="margin-top: 0;">Welcome</h2>
@@ -55,109 +113,101 @@
             <button id="saveKeyBtn">Start Mapping</button>
         </div>
     </div>
-    <!-- Left Panel: 2D Map for Drawing Bounding Box -->
+
     <div id="map-container">
         <div id="ui">
             <h3 style="margin:0 0 5px 0;">1. Select Area</h3>
             <p id="status">Use the rectangle tool on the map to draw your region of interest.</p>
+            <label style="font-size:13px; color:#ccc; display:flex; align-items:center; margin-top:10px; cursor:pointer;">
+                <input type="checkbox" id="fetchWikiCheckbox" checked style="margin-right:8px;" />
+                Overlay Wikimedia Images
+            </label>
             <button id="generateBtn" disabled>Generate 3D Map</button>
         </div>
+
+        <div id="wiki-overlay">
+            <div id="wiki-header">
+                <strong id="wiki-title" style="font-size:14px;">📷 Wikimedia Commons</strong>
+                <span id="wiki-toggle">▼</span>
+            </div>
+            <div id="wiki-content"></div>
+            <div id="wiki-pagination">
+                <button id="prevWikiBtn" class="page-btn" disabled>Prev</button>
+                <button id="nextWikiBtn" class="page-btn" disabled>Next</button>
+            </div>
+        </div>
+
+        <div id="image-viewer">
+            <button id="close-viewer-btn">×</button>
+            <img id="viewer-img" src="" alt="Maximised View">
+            <h3 id="viewer-title"></h3>
+        </div>
+
         <div id="map"></div>
     </div>
 
-    <!-- Right Panel: Three.js 3D Terrain Viewport -->
     <div id="viewer-container"></div>
 
     <script type="module">
+        import * as THREE from 'https://esm.sh/three@0.150.1';
+        import { GLTFLoader } from 'https://esm.sh/three@0.150.1/examples/jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'https://esm.sh/three@0.150.1/examples/jsm/controls/OrbitControls.js';
 
-// --- 0. API KEY MODAL LOGIC ---
+        // Set true to show red (NW) and blue (SE) corner pillars for checking alignment
+        const DEBUG_CORNERS = false;
+
+        const $ = (id) => document.getElementById(id);
+
+        // --- 0. API KEY MODAL ---
         let userApiKey = localStorage.getItem('openTopoKey') || "";
-        const modal = document.getElementById('api-modal');
-        const keyInput = document.getElementById('apiKeyInput');
-        
-        if (userApiKey) {
-            keyInput.value = userApiKey;
-        }
+        const keyInput = $('apiKeyInput');
+        if (userApiKey) keyInput.value = userApiKey;
 
-        document.getElementById('saveKeyBtn').addEventListener('click', () => {
+        $('saveKeyBtn').addEventListener('click', () => {
             const val = keyInput.value.trim();
             if (val) {
                 userApiKey = val;
-                localStorage.setItem('openTopoKey', userApiKey); // Save to browser storage
-                modal.style.display = 'none';
+                localStorage.setItem('openTopoKey', userApiKey);
+                $('api-modal').style.display = 'none';
             } else {
                 alert("Please enter a valid API key.");
             }
         });
-        
-        // (Keep all your Leaflet and Three.js setup code here...)        
 
-import * as THREE from 'https://esm.sh/three@0.150.1';
-        import { GLTFLoader } from 'https://esm.sh/three@0.150.1/examples/jsm/loaders/GLTFLoader.js';
-        import { OrbitControls } from 'https://esm.sh/three@0.150.1/examples/jsm/controls/OrbitControls.js';
+        // --- 1. LEAFLET MAP ---
+        const map = L.map('map').setView([56.62, -5.0], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
+        setTimeout(() => map.invalidateSize(), 250);
 
-        // --- 1. LEAFLET 2D MAP SETUP ---
-        const map = L.map('map').setView([56.62, -5.0], 11); // Default to Scottish Highlands
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        // FIX: Force Leaflet to recalculate its container size once rendered
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 250);
-
-        // Feature group to hold the drawn rectangle
         const drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
-
-        const drawControl = new L.Control.Draw({
-            draw: {
-                polygon: false,
-                polyline: false,
-                circle: false,
-                marker: false,
-                circlemarker: false,
-                rectangle: {
-                    shapeOptions: { color: '#2ea44f', weight: 3 }
-                }
-            },
-            edit: {
-                featureGroup: drawnItems,
-                edit: true
-            }
-        });
-        map.addControl(drawControl);
+        map.addControl(new L.Control.Draw({
+            draw: { polygon: false, polyline: false, circle: false, marker: false, circlemarker: false, rectangle: { shapeOptions: { color: '#2ea44f', weight: 3 } } },
+            edit: { featureGroup: drawnItems, edit: true }
+        }));
 
         let selectedBounds = null;
+        let lastRenderedBounds = null; // true DEM bounds of the current 3D mesh
 
-        map.on(L.Draw.Event.CREATED, function (e) {
-            drawnItems.clearLayers(); // Only allow one selection box at a time
-            const layer = e.layer;
-            drawnItems.addLayer(layer);
-            
-            selectedBounds = layer.getBounds();
-            document.getElementById('generateBtn').disabled = false;
-            document.getElementById('status').innerText = "Box selected! Click Generate to render 3D terrain.";
+        map.on(L.Draw.Event.CREATED, (e) => {
+            drawnItems.clearLayers();
+            drawnItems.addLayer(e.layer);
+            selectedBounds = e.layer.getBounds();
+            $('generateBtn').disabled = false;
+            $('status').innerText = "Box selected! Click Generate to render 3D terrain.";
+        });
+        map.on(L.Draw.Event.EDITED, (e) => {
+            e.layers.eachLayer(layer => selectedBounds = layer.getBounds());
         });
 
-        map.on(L.Draw.Event.EDITED, function (e) {
-            const layers = e.layers;
-            layers.eachLayer(function (layer) {
-                selectedBounds = layer.getBounds();
-            });
-        });
-
-        // --- 2. THREE.JS 3D VIEWER SETUP ---
-        const container = document.getElementById('viewer-container');
+        // --- 2. THREE.JS VIEWER ---
+        const container = $('viewer-container');
         const scene = new THREE.Scene();
-        
-        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
-        camera.position.set(0, 800, 1200);
+        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 8000);
+        camera.position.set(0, 20000, 60000);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // sharper on HiDPI screens
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
 
@@ -170,22 +220,357 @@ import * as THREE from 'https://esm.sh/three@0.150.1';
         scene.add(new THREE.AmbientLight(0x404040, 2.0));
 
         let currentModel = null;
+        let mapMarker = null;
+        let pointLight = null;
+        let debugPillars = [];
+        let flight = null; // active camera flight, or null
+        controls.minDistance = 5;
+        // Any user input (drag, zoom, pan) cancels a flight so the controls never fight it
+        controls.addEventListener('start', () => { flight = null; });
 
-        // --- 3. TRIGGER BACKEND GENERATION ---
-        document.getElementById('generateBtn').addEventListener('click', async () => {
+        // Lon/lat -> point on the terrain surface (east = +X, north = -Z, up = +Y)
+        function geoToScene(lon, lat) {
+            if (!currentModel || !lastRenderedBounds) return null;
+            const b = lastRenderedBounds;
+            const u = (lon - b.getWest()) / (b.getEast() - b.getWest());
+            const v = (lat - b.getSouth()) / (b.getNorth() - b.getSouth());
+
+            currentModel.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(currentModel);
+            const x = box.min.x + u * (box.max.x - box.min.x);
+            const z = box.max.z - v * (box.max.z - box.min.z);
+
+            const ray = new THREE.Raycaster(new THREE.Vector3(x, box.max.y + 2000, z), new THREE.Vector3(0, -1, 0));
+            const hits = ray.intersectObject(currentModel, true);
+            return new THREE.Vector3(x, hits.length ? hits[0].point.y : box.max.y, z);
+        }
+
+        function clearDebugPillars() {
+            debugPillars.forEach(p => scene.remove(p));
+            debugPillars = [];
+        }
+
+        function addDebugPillars() {
+            const b = lastRenderedBounds;
+            const corners = [
+                [b.getWest(), b.getNorth(), 0xff0000],  // NW = red
+                [b.getEast(), b.getSouth(), 0x0000ff]   // SE = blue
+            ];
+            corners.forEach(([lon, lat, color]) => {
+                const p = geoToScene(lon, lat);
+                if (!p) return;
+                const pillar = new THREE.Mesh(new THREE.BoxGeometry(4, 200, 4), new THREE.MeshBasicMaterial({ color }));
+                pillar.position.set(p.x, p.y + 100, p.z);
+                scene.add(pillar);
+                debugPillars.push(pillar);
+            });
+        }
+
+        // --- WIKIMEDIA GALLERY ---
+        // Cells are searched slowly, nearest the box centre first. Results are appended as they
+        // arrive, so the list only ever grows and the page you are viewing stays stable.
+        let wikiImages = [];
+        let wikiSeen = new Set();
+        let currentWikiPage = 0;
+        const ITEMS_PER_PAGE = 10;
+        const photoRenderer = L.canvas({ padding: 0.5, pane: 'markerPane' });
+        const wikiMarkerLayer = L.layerGroup().addTo(map);
+        let wikiActive = null;     // photo selected via a map marker
+        let wikiFetchId = 0;       // guards against stale searches
+        let wikiFailedCells = 0;   // cells that still failed after retries
+        let wikiProgress = null;   // {done, total} while searching, else null
+        let wikiRenderedCount = 0; // items currently drawn in the list
+        const WIKI_DELAY_MS = 250; // pause between requests to go easy on Wikimedia
+
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
+        async function fetchJsonRetry(url, tries = 4) {
+            for (let i = 0; i < tries; i++) {
+                try {
+                    const r = await fetch(url);
+                    if (r.ok) {
+                        const j = await r.json();
+                        if (!j.error) return j;
+                        console.warn('Commons API error:', j.error);
+                    } else {
+                        console.warn('Commons HTTP status:', r.status);
+                    }
+                } catch (e) { console.warn('Commons request failed:', e); }
+                await sleep(400 * 2 ** i);
+            }
+            return null;
+        }
+
+        // One grid cell, following API continuation so no files are lost.
+        // Returns {query:{pages}} (possibly empty) or null if the cell failed.
+        async function fetchWikiCell(bboxStr) {
+            const pages = {};
+            let cont = {};
+            for (let i = 0; i < 10; i++) {
+                const params = new URLSearchParams({
+                    action: 'query', generator: 'geosearch', ggsbbox: bboxStr, ggsnamespace: '6', ggslimit: 'max',
+                    prop: 'coordinates|pageimages', colimit: 'max', piprop: 'thumbnail', pithumbsize: '200', pilimit: 'max',
+                    format: 'json', origin: '*', ...cont
+                });
+                const data = await fetchJsonRetry('https://commons.wikimedia.org/w/api.php?' + params);
+                if (!data) return null;
+                Object.entries(data.query?.pages || {}).forEach(([id, p]) => {
+                    pages[id] = Object.assign(pages[id] || {}, p);
+                });
+                if (!data.continue) break;
+                cont = data.continue;
+                await sleep(WIKI_DELAY_MS);
+            }
+            return { query: { pages } };
+        }
+
+        function clearWiki() {
+            wikiFetchId++; // invalidates any search in flight
+            wikiImages = [];
+            wikiSeen = new Set();
+            currentWikiPage = 0;
+            wikiFailedCells = 0;
+            wikiProgress = null;
+            wikiRenderedCount = 0;
+            wikiMarkerLayer.clearLayers();
+            wikiActive = null;
+            $('wiki-content').innerHTML = '';
+            $('wiki-overlay').style.display = 'none';
+        }
+
+        function addWikiPages(pages) {
+            Object.values(pages).forEach(page => {
+                if (page.coordinates && page.thumbnail && !wikiSeen.has(page.pageid)) {
+                    wikiSeen.add(page.pageid);
+                    const item = {
+                        title: page.title.replace('File:', ''),
+                        lat: page.coordinates[0].lat,
+                        lon: page.coordinates[0].lon,
+                        thumb: page.thumbnail.source
+                    };
+                    // Every photo gets a map point, whichever gallery page it is on
+                    const idx = wikiImages.length;
+                    item.marker = L.circleMarker([item.lat, item.lon], {
+                        renderer: photoRenderer, radius: 4, color: '#ff9800', weight: 2, bubblingMouseEvents: false
+                    }).bindTooltip(item.title).on('click', () => selectWikiIndex(idx)).addTo(wikiMarkerLayer);
+                    wikiImages.push(item);
+                }
+            });
+        }
+
+        async function fetchWikimediaImages(bounds) {
+            clearWiki();
+            const myId = wikiFetchId;
+            const minLat = bounds.getSouth(), maxLat = bounds.getNorth();
+            const minLon = bounds.getWest(), maxLon = bounds.getEast();
+            const cLat = (minLat + maxLat) / 2, cLon = (minLon + maxLon) / 2;
+
+            const STEP = 0.05; // ~5km cells to stay under API area limits
+            const cells = [];
+            for (let lat = minLat; lat < maxLat; lat += STEP) {
+                for (let lon = minLon; lon < maxLon; lon += STEP) {
+                    cells.push({
+                        bbox: `${Math.min(lat + STEP, maxLat)}|${lon}|${lat}|${Math.min(lon + STEP, maxLon)}`, // top|left|bottom|right
+                        d: Math.hypot(lat + STEP / 2 - cLat, lon + STEP / 2 - cLon)
+                    });
+                }
+            }
+            cells.sort((a, b) => a.d - b.d); // nearest the centre first, so useful results arrive early
+
+            wikiProgress = { done: 0, total: cells.length };
+$('wiki-overlay').classList.add('collapsed')
+            $('wiki-overlay').style.display = 'flex';
+            renderWikiGallery();
+
+            let next = 0;
+            const worker = async () => {
+                while (next < cells.length && myId === wikiFetchId) {
+                    const cell = cells[next++];
+                    const data = await fetchWikiCell(cell.bbox);
+                    if (myId !== wikiFetchId) return;
+                    if (data) addWikiPages(data.query.pages); else wikiFailedCells++;
+                    wikiProgress.done++;
+                    refreshWikiLive();
+                    await sleep(WIKI_DELAY_MS);
+                }
+            };
+            // One request at a time for large areas, two for small ones
+            await Promise.all(Array.from({ length: cells.length > 20 ? 1 : 2 }, worker));
+            if (myId !== wikiFetchId) return;
+
+            wikiProgress = null;
+            console.log(`Commons: ${cells.length} cells, ${wikiFailedCells} failed, ${wikiImages.length} images`);
+            if (!wikiImages.length && !wikiFailedCells) $('wiki-overlay').style.display = 'none';
+
+            renderWikiGallery(true);
+
+        }
+
+        function updateWikiHeader() {
+            const totalPages = Math.max(1, Math.ceil(wikiImages.length / ITEMS_PER_PAGE));
+            const failed = wikiFailedCells ? `, ${wikiFailedCells} areas failed` : '';
+            $('wiki-title').textContent = wikiProgress
+                ? `📷 ${wikiImages.length} found, searching ${wikiProgress.done}/${wikiProgress.total} areas${failed}`
+                : `📷 Wikimedia Commons (page ${currentWikiPage + 1}/${totalPages}, ${wikiImages.length} images${failed})`;
+            $('prevWikiBtn').disabled = currentWikiPage === 0;
+            $('nextWikiBtn').disabled = (currentWikiPage + 1) * ITEMS_PER_PAGE >= wikiImages.length;
+        }
+
+        // Called after each cell: redraw only if the visible page gained items, otherwise just update the header
+        function refreshWikiLive() {
+            const onPage = Math.min(ITEMS_PER_PAGE, Math.max(0, wikiImages.length - currentWikiPage * ITEMS_PER_PAGE));
+            if (onPage !== wikiRenderedCount) renderWikiGallery(true); else updateWikiHeader();
+        }
+
+        // Clicking a photo point on the 2D map: jump to its gallery page, unhide the panel,
+        // highlight the entry, fly the 3D view there and (optionally) maximise the photo
+        const MARKER_CLICK_MAXIMISES = true;
+        function selectWikiIndex(i) {
+            const item = wikiImages[i];
+            if (!item) return;
+            wikiActive = item;
+            currentWikiPage = Math.floor(i / ITEMS_PER_PAGE);
+            //$('wiki-overlay').classList.remove('collapsed');
+            //$('wiki-toggle').textContent = '▼';
+            renderWikiGallery();
+            const div = $('wiki-content').querySelector('.wiki-item.active');
+            if (div) div.scrollIntoView({ block: 'nearest' });
+            flyToWikiImage(item.lon, item.lat);
+            if (MARKER_CLICK_MAXIMISES) openImageViewer(item);
+        }
+
+        // Current gallery page = larger yellow points; the rest = small orange points
+        function styleWikiMarkers() {
+            const s = currentWikiPage * ITEMS_PER_PAGE, e = s + ITEMS_PER_PAGE;
+            wikiImages.forEach((it, i) => it.marker.setStyle(
+                i >= s && i < e ? { radius: 6, color: 'yellow', weight: 3 } : { radius: 4, color: '#ff9800', weight: 2 }));
+        }
+
+        function renderWikiGallery(keepScroll = false) {
+            const content = $('wiki-content');
+            const prevScroll = content.scrollTop;
+            content.innerHTML = '';
+
+            const start = currentWikiPage * ITEMS_PER_PAGE;
+            const pageItems = wikiImages.slice(start, start + ITEMS_PER_PAGE);
+            wikiRenderedCount = pageItems.length;
+
+            if (wikiImages.length === 0) {
+                content.innerHTML = wikiProgress
+                    ? '<p style="text-align:center;">Searching...</p>'
+                    : wikiFailedCells
+                        ? '<p style="text-align:center;">No images loaded: Wikimedia did not respond for some areas. See the browser console for details.</p>'
+                        : '<p style="text-align:center;">No imagery found in this area.</p>';
+                updateWikiHeader();
+                return;
+            }
+
+            pageItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'wiki-item' + (item === wikiActive ? ' active' : '');
+                div.innerHTML = `
+                    <img alt="thumb">
+                    <div class="wiki-item-info">
+                        <strong></strong>
+                        <div class="wiki-btn-group">
+                            <button class="wiki-btn fly">📍 3D Map</button>
+                            <button class="wiki-btn max">🔍 Maximise</button>
+                        </div>
+                    </div>`;
+                div.querySelector('img').src = item.thumb;
+                div.querySelector('strong').textContent =
+                    item.title.length > 50 ? item.title.substring(0, 50) + '...' : item.title;
+
+                div.querySelector('.fly').addEventListener('click', () => flyToWikiImage(item.lon, item.lat));
+                div.querySelector('.max').addEventListener('click', () => openImageViewer(item));
+                content.appendChild(div);
+            });
+
+            content.scrollTop = keepScroll ? prevScroll : 0;
+            styleWikiMarkers();
+            updateWikiHeader();
+        }
+
+        $('prevWikiBtn').addEventListener('click', () => {
+            if (currentWikiPage > 0) { currentWikiPage--; renderWikiGallery(); }
+        });
+        $('nextWikiBtn').addEventListener('click', () => {
+            if ((currentWikiPage + 1) * ITEMS_PER_PAGE < wikiImages.length) { currentWikiPage++; renderWikiGallery(); }
+        });
+        $('wiki-header').addEventListener('click', () => {
+            const collapsed = $('wiki-overlay').classList.toggle('collapsed');
+            $('wiki-toggle').textContent = collapsed ? '▲' : '▼';
+        });
+
+        // --- IMAGE VIEWER ---
+        async function openImageViewer(item) {
+            const img = $('viewer-img');
+            $('viewer-title').innerText = item.title;
+            img.src = item.thumb; // show the thumbnail instantly, then swap in the big one
+            $('image-viewer').style.display = 'flex';
+            try {
+                // Use the original file when the browser can show it and it's not huge;
+                // otherwise fall back to a 1920px rendition (CSS scales it to fit)
+                const url = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent('File:' + item.title)}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=1920&format=json&origin=*`;
+                const data = await (await fetch(url)).json();
+                const info = Object.values(data.query.pages)[0].imageinfo?.[0];
+                const MAX_ORIGINAL_BYTES = 10e6;
+                const useOriginal = info && /^image\/(jpeg|png|gif|webp)$/.test(info.mime) && info.size <= MAX_ORIGINAL_BYTES;
+                const best = info && (useOriginal ? info.url : (info.thumburl || info.url));
+                if (best && $('image-viewer').style.display === 'flex') img.src = best;
+            } catch (e) { console.warn("Hi-res lookup failed, keeping thumbnail", e); }
+        }
+        $('close-viewer-btn').addEventListener('click', () => {
+            $('image-viewer').style.display = 'none';
+            $('viewer-img').src = "";
+        });
+
+        // --- 3D MARKER + CAMERA FLIGHT ---
+        function flyToWikiImage(lon, lat) {
+            const p = geoToScene(lon, lat);
+            if (!p) return;
+
+            if (!mapMarker) {
+                mapMarker = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+                scene.add(mapMarker);
+                pointLight = new THREE.PointLight(0xffff00, 2, 150);
+                scene.add(pointLight);
+            }
+            mapMarker.position.set(p.x, p.y + 2, p.z);
+            pointLight.position.set(p.x, p.y + 10, p.z);
+
+            // Distance scales with model size, so it works for any area; tweak FLY_UP / FLY_BACK to taste
+            const FLY_UP = 0.15, FLY_BACK = 0.17;
+            const size = new THREE.Box3().setFromObject(currentModel).getSize(new THREE.Vector3()).length();
+            flight = {
+                t0: performance.now(), dur: 1200,
+                fromPos: camera.position.clone(), fromTarget: controls.target.clone(),
+                toPos: new THREE.Vector3(p.x, p.y + size * FLY_UP, p.z + size * FLY_BACK),
+                toTarget: p.clone()
+            };
+        }
+
+        // --- 4. BACKEND GENERATION ---
+        $('generateBtn').addEventListener('click', async () => {
             if (!selectedBounds) return;
 
-            document.getElementById('status').innerText = "Fetching NASA DEM & crunching mesh on server...";
-            document.getElementById('generateBtn').disabled = true;
+            $('status').innerText = "Fetching NASA DEM & crunching mesh on server...";
+            $('generateBtn').disabled = true;
 
             const bboxData = {
                 min_lon: selectedBounds.getWest(),
                 min_lat: selectedBounds.getSouth(),
                 max_lon: selectedBounds.getEast(),
                 max_lat: selectedBounds.getNorth(),
-                z_exaggeration: 2.5,
-                api_key: userApiKey // <-- Send the user's key to the backend
+                z_exaggeration: 1.1,
+                api_key: userApiKey
             };
+
+            if ($('fetchWikiCheckbox').checked) {
+                fetchWikimediaImages(selectedBounds);
+            } else {
+                clearWiki();
+            }
 
             try {
                 const response = await fetch('/generate', {
@@ -194,38 +579,69 @@ import * as THREE from 'https://esm.sh/three@0.150.1';
                     body: JSON.stringify(bboxData)
                 });
                 const data = await response.json();
+                if (data.status !== "success") throw new Error(data.detail || "Unknown error");
 
-                if (data.status === "success") {
-                    document.getElementById('status').innerText = "Loading GLB into WebGL viewer...";
-                    
-                    const loader = new GLTFLoader();
-                    loader.load(data.glb_url, (gltf) => {
-                        if (currentModel) scene.remove(currentModel);
-                        
-                        currentModel = gltf.scene;
-                        currentModel.traverse((node) => {
-                            if (node.isMesh) node.material.side = THREE.DoubleSide;
-                        });
+                $('status').innerText = "Loading GLB into WebGL viewer...";
 
-                        const box = new THREE.Box3().setFromObject(currentModel);
-                        const center = box.getCenter(new THREE.Vector3());
-                        currentModel.position.sub(center);
-                        
-                        scene.add(currentModel);
-                        document.getElementById('status').innerText = "Done! Drag on map to update, or orbit 3D view.";
-                        document.getElementById('generateBtn').disabled = false;
+                // Use the true DEM bounds so clicks/markers line up with the mesh
+                lastRenderedBounds = L.latLngBounds(
+                    [data.true_bounds.south, data.true_bounds.west],
+                    [data.true_bounds.north, data.true_bounds.east]
+                );
+
+                new GLTFLoader().load(data.glb_url, (gltf) => {
+                    if (currentModel) scene.remove(currentModel);
+                    clearDebugPillars();
+
+                    currentModel = gltf.scene;
+                    currentModel.traverse((node) => {
+                        if (node.isMesh) {
+                            node.material.side = THREE.DoubleSide;
+                            // keeps the satellite texture sharp at shallow viewing angles
+                            if (node.material.map) node.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                        }
                     });
-                } else {
-                    throw new Error(data.detail || "Unknown error");
-                }
+
+                    // Centre the model on the origin
+                    const center = new THREE.Box3().setFromObject(currentModel).getCenter(new THREE.Vector3());
+                    currentModel.position.sub(center);
+                    scene.add(currentModel);
+                    currentModel.updateMatrixWorld(true);
+
+                    const centeredBox = new THREE.Box3().setFromObject(currentModel);
+                    if (DEBUG_CORNERS) addDebugPillars();
+
+                    // Calculate the diagonal length of the 3D mesh
+const modelSize = centeredBox.getSize(new THREE.Vector3()).length();
+
+// Position the camera relative to the mesh size so it always frames it perfectly.
+// To start even closer, reduce the 0.2 and 0.5 multipliers. 
+camera.position.set(0, centeredBox.max.y + (modelSize * 0.2), modelSize * 0.5);
+                    controls.target.set(0, 0, 0);
+                    flight = null;
+                    if (mapMarker) { scene.remove(mapMarker); scene.remove(pointLight); mapMarker = null; pointLight = null; }
+
+                    $('status').innerText = "Done! Drag on map to update, or orbit 3D view.";
+                    $('generateBtn').disabled = false;
+                }, undefined, (err) => {
+                    $('status').innerText = "Error loading model: " + (err.message || err);
+                    $('generateBtn').disabled = false;
+                });
             } catch (err) {
-                document.getElementById('status').innerText = "Error: " + err.message;
-                document.getElementById('generateBtn').disabled = false;
+                $('status').innerText = "Error: " + err.message;
+                $('generateBtn').disabled = false;
             }
         });
 
         function animate() {
             requestAnimationFrame(animate);
+            if (flight) {
+                const k = Math.min(1, (performance.now() - flight.t0) / flight.dur);
+                const e = 1 - Math.pow(1 - k, 3); // ease-out
+                camera.position.lerpVectors(flight.fromPos, flight.toPos, e);
+                controls.target.lerpVectors(flight.fromTarget, flight.toTarget, e);
+                if (k >= 1) flight = null;
+            }
             controls.update();
             renderer.render(scene, camera);
         }
