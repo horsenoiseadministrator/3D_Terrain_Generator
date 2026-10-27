@@ -50,7 +50,7 @@ Esri provide the satellite imagery:
 And (new!) Wikimedia Commons provide photography:
 <br><br><br>
 
-img width="905" height="487" alt="image" src="https://github.com/user-attachments/assets/c6bfbaed-501c-40c2-864d-279d88673cb9" />
+<img width="905" height="487" alt="image" src="https://github.com/user-attachments/assets/c6bfbaed-501c-40c2-864d-279d88673cb9" />
 <br><br>
 <img width="919" height="490" alt="image" src="https://github.com/user-attachments/assets/95cf0277-6bea-4864-8bf5-9dd9889d56e5" />
 <br>
